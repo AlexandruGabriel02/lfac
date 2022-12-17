@@ -1,4 +1,3 @@
-
 _GLOBAL_VARS_
 var const int x <- 3, y <- 2;
 var string str <- 'abcdef';
