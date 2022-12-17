@@ -24,8 +24,10 @@ global_section: LABEL_VAR var_declaration ;
 var_declaration: var_declaration decl_line ';' 
                 | /* epsilon */
                 ;
-decl_line: DECL_VAR DECL_TYPE var_list 
-          | DECL_VAR DECL_CONSTANT DECL_TYPE const_list
+decl_var_dimension: DECL_VAR 
+                  | decl_var_dimension '[' INT_VAL ']'
+decl_line: decl_var_dimension DECL_TYPE var_list 
+          | decl_var_dimension DECL_CONSTANT DECL_TYPE const_list
           ;
 var_list: IDENTIFIER 
         | IDENTIFIER ASSIGN INT_VAL
