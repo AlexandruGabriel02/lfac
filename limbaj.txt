@@ -1,0 +1,78 @@
+
+_GLOBAL_VARS_
+var const int x <- 3, y <- 2;
+var string str <- 'abcdef';
+var[5] int arr_5 <- [1, 2, 3, 4, 5];
+var[10][10] float matrice <- [ [2, 1, 3], [1], [4, 5] ];
+
+_STRUCTURES_
+custom nume_str
+{
+vars:
+    var int x;
+    var string y;
+methods:
+    function nume () : tip {}
+    ...
+}
+custom[10] nume_str v, a, b, c(2, 'test');
+
+_FUNCTIONS_
+function nume(p1, p2, p3) : int 
+{
+    //cod
+    return ...
+}
+
+_BEGIN_PROGR_
+//cod
+/*
+v->x;
+v->nume();
+arr_5[4] <- 3;
+matrice[2][3] <- 2
+*/
+
+------------------------------------------------------------------
+
+Expresii:
+    x <- 2*2+y
+    2*3 == 6
+
+If:
+    if expr_bool do 
+    {
+
+    }
+    elif expr_bool do 
+    {
+
+    }
+    else 
+    {
+
+    }
+
+While:
+    while expr_bool do 
+    {
+        //cod 
+    }
+
+For:
+    for char c : str do
+    {
+
+    } 
+
+Repeat ... until:
+    repeat 
+    {
+
+    }
+    until expr_bool;
+
+
+
+
+
