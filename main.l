@@ -20,6 +20,7 @@
 "const" {return DECL_CONSTANT;}
 "int"|"float"|"char"|"string"|"bool" {return DECL_TYPE;}
 
+"return" {return FUNC_RETURN;}
 
 $[_a-zA-Z][_a-zA-Z0-9]* {return IDENTIFIER;}
 [_a-zA-Z][_a-zA-Z0-9]* {return NAME;}

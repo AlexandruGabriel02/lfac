@@ -13,13 +13,13 @@ vars:
     var int $x;
     var string $y;
 methods:
-    function nume () : int {
+    function functieVoid (){
 
     }
 
-    function altceva(var const char $c) : bool 
+    function functieBool(var const char $c) : bool 
     {
-
+        return 0;
     }
 }
 
@@ -31,16 +31,18 @@ methods:
 
 _FUNCTIONS_
 function floatFunc() : float 
-{}
+{
+    return $x;
+}
 
 function intFunc1() : int 
 {
-
+    return 20;
 }
 
 function intFunc2 (var const int $x, var[20][10] string $str) : int
 {
-
+    return 10;
 }
 
 _BEGIN_PROGR_
