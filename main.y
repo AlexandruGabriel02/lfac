@@ -27,25 +27,29 @@ var_declaration: var_declaration decl_line ';'
                 ;
 decl_var_dimension: DECL_VAR 
                   | decl_var_dimension '[' INT_VAL ']'
+                  ;
+decl_struct_dimension: DECL_CUSTOM
+                     | decl_struct_dimension '[' INT_VAL ']'
+                     ;
 decl_line: decl_var_dimension DECL_TYPE var_list 
           | decl_var_dimension DECL_CONSTANT DECL_TYPE const_list
+          | decl_struct_dimension NAME var_list 
+          | decl_struct_dimension DECL_CONSTANT NAME const_list
           ;
 var_list: IDENTIFIER 
-        | IDENTIFIER ASSIGN INT_VAL
-        | IDENTIFIER ASSIGN FLOAT_VAL
-        | IDENTIFIER ASSIGN STRING_VAL
+        | IDENTIFIER ASSIGN var_value
+        | IDENTIFIER '(' initializer_list ')'
         | var_list ',' IDENTIFIER
-        | var_list ',' IDENTIFIER ASSIGN INT_VAL
-        | var_list ',' IDENTIFIER ASSIGN STRING_VAL
-        | var_list ',' IDENTIFIER ASSIGN FLOAT_VAL
+        | var_list ',' IDENTIFIER ASSIGN var_value
         ;
-const_list: IDENTIFIER ASSIGN INT_VAL
-        | IDENTIFIER ASSIGN STRING_VAL
-        | IDENTIFIER ASSIGN FLOAT_VAL
-        | var_list ',' IDENTIFIER ASSIGN INT_VAL
-        | var_list ',' IDENTIFIER ASSIGN STRING_VAL
-        | var_list ',' IDENTIFIER ASSIGN FLOAT_VAL
+const_list: IDENTIFIER ASSIGN var_value
+        | IDENTIFIER '(' initializer_list ')'
+        | var_list ',' IDENTIFIER ASSIGN var_value
         ;
+var_value: INT_VAL | STRING_VAL | FLOAT_VAL ;
+initializer_list: initializer_list ',' var_value 
+                | var_value
+                ;
 
 /* Structuri definite de user (structura aka 'custom') */
 struct_section: LABEL_STRUCT  struct_declaration;
