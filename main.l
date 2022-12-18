@@ -26,6 +26,7 @@ $[_a-zA-Z][_a-zA-Z0-9]* {return IDENTIFIER;}
 [_a-zA-Z][_a-zA-Z0-9]* {return NAME;}
 
 "<-" {return ASSIGN;}
+"->" {return POINT_TO;}
 
 '[_a-zA-Z0-9]*' {return STRING_VAL;}
 0|([1-9][0-9]*) {return INT_VAL;}

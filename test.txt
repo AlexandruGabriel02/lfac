@@ -46,3 +46,8 @@ function intFunc2 (var const int $x, var[20][10] string $str) : int
 }
 
 _BEGIN_PROGR_
+
+$c[5] <- 100;
+$x <- intFunc1();
+$obj->$x <- $obj->functie($a, 12, 'abc', intFunc2());
+$mat[10][10]->$b[10] <- functie($x->functie(10), $x->$y);

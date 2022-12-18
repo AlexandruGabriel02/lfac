@@ -13,12 +13,13 @@ int yylex(void);
 %token DECL_VAR DECL_CUSTOM DECL_FUNCTION
 %token DECL_CONSTANT DECL_TYPE
 %token STRING_VAL INT_VAL FLOAT_VAL
-%token IDENTIFIER ASSIGN NAME
+%token IDENTIFIER ASSIGN NAME POINT_TO
 %token STRUCT_VARS STRUCT_METHODS
 %token FUNC_RETURN
 
 %%
 program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
+
 
 /* Variabile globale */
 global_section: LABEL_VAR var_declaration ;
@@ -52,6 +53,8 @@ initializer_list: initializer_list ',' var_value
                 | var_value
                 ;
 
+
+
 /* Structuri definite de user (structura aka 'custom') */
 struct_section: LABEL_STRUCT  struct_declaration;
 
@@ -65,6 +68,8 @@ struct_code: STRUCT_VARS ':' str_vars_section STRUCT_METHODS ':' str_methods_sec
            ;
 str_vars_section: var_declaration ;
 str_methods_section: func_declaration ;
+
+
 
 
 /* Functii */
@@ -88,15 +93,42 @@ list_param: list_param ',' parameter
 parameter: decl_var_dimension DECL_TYPE IDENTIFIER
          | decl_var_dimension DECL_CONSTANT DECL_TYPE IDENTIFIER
         ;
-return_instr: FUNC_RETURN IDENTIFIER ';'
-            | FUNC_RETURN var_value ';'
+return_instr: FUNC_RETURN rvalue ';'
+
+function_call: NAME '(' ')'
+             | NAME '(' call_list ')'
+             ;
+call_list: call_list ',' rvalue
+         | rvalue
+         ;
+
+
 
 /* Main */
 main_section: LABEL_MAIN code_block;
 
-code_block: ;
-//code_statement: assignment ;
+code_block: code_block code_statement
+          | /* epsilon */
+          ;
+//de adaugat mai multe
+code_statement: lvalue ASSIGN rvalue ';'
+              ; //exemplu de test; remove this
 
+
+
+
+/* Diverse */
+lvalue: IDENTIFIER mem_location
+      | IDENTIFIER mem_location POINT_TO lvalue //structura
+      ;
+rvalue:   function_call
+        | var_value
+        | IDENTIFIER mem_location POINT_TO function_call
+        | lvalue
+        ;
+mem_location: mem_location '[' INT_VAL ']'
+            | /* epsilon */
+            ;
 
 
 %%
