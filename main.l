@@ -19,6 +19,7 @@
 
 
 $[_a-zA-Z][_a-zA-Z0-9]* {return IDENTIFIER;}
+[_a-zA-Z][_a-zA-Z0-9]* {return NAME;}
 
 "<-" {return ASSIGN;}
 

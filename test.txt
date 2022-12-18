@@ -7,5 +7,17 @@ var[8] const float $fl <- 12, $c <- 12;
 _STRUCTURES_
 
 _FUNCTIONS_
+function floatFunc() : float 
+{}
+
+function intFunc1() : int 
+{
+
+}
+
+function intFunc2 (var const int $x, var[20][10] string $str) : int
+{
+
+}
 
 _BEGIN_PROGR_

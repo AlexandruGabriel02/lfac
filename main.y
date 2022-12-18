@@ -13,7 +13,7 @@ int yylex(void);
 %token DECL_VAR DECL_CUSTOM DECL_FUNCTION
 %token DECL_CONSTANT DECL_TYPE
 %token STRING_VAL INT_VAL FLOAT_VAL
-%token IDENTIFIER ASSIGN
+%token IDENTIFIER ASSIGN NAME
 
 %%
 program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
@@ -47,13 +47,30 @@ const_list: IDENTIFIER ASSIGN INT_VAL
         ;
 
 /* Structuri definite de user */
-struct_section: LABEL_STRUCT ;
+struct_section: LABEL_STRUCT  ;
 
 /* Functii */
-function_section: LABEL_FUNC ;
+function_section: LABEL_FUNC func_declaration;
+
+func_declaration: func_declaration singular_function
+                | /* epsilon */ 
+                ;
+singular_function: DECL_FUNCTION NAME '(' list_param ')' ':' DECL_TYPE 
+                '{' code_block '}' 
+                | DECL_FUNCTION NAME '(' ')' ':' DECL_TYPE 
+                '{' code_block '}'
+                ;
+list_param: list_param ',' parameter
+          | parameter
+          ; 
+parameter: decl_var_dimension DECL_TYPE IDENTIFIER
+         | decl_var_dimension DECL_CONSTANT DECL_TYPE IDENTIFIER
+        ;
 
 /* Main */
-main_section: LABEL_MAIN ;
+main_section: LABEL_MAIN code_block;
+
+code_block: ;
 
 %%
 
