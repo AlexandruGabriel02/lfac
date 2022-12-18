@@ -14,6 +14,9 @@
 "custom" {return DECL_CUSTOM;}
 "function" {return DECL_FUNCTION;}
 
+"vars" {return STRUCT_VARS;}
+"methods" {return STRUCT_METHODS;}
+
 "const" {return DECL_CONSTANT;}
 "int"|"float"|"char"|"string"|"bool" {return DECL_TYPE;}
 

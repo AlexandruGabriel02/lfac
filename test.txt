@@ -5,6 +5,27 @@ var[10][5][1][4] bool $b;
 var[8] const float $fl <- 12, $c <- 12;
 
 _STRUCTURES_
+custom myCustom
+{
+vars:
+    var int $x;
+    var string $y;
+methods:
+    function nume () : int {
+
+    }
+
+    function altceva(var const char $c) : bool 
+    {
+
+    }
+}
+
+custom emptyObj
+{
+vars:
+methods:
+}
 
 _FUNCTIONS_
 function floatFunc() : float 
