@@ -17,7 +17,7 @@ int yylex(void);
 %token STRUCT_VARS STRUCT_METHODS
 %token FUNC_RETURN
 %token COMPARATION_OP LOGICAL_OP
-%token IF ELSE ELSE_IF WHILE FOR REPEAT UNTIL 
+%token IF ELSE ELSE_IF WHILE FOR IN REPEAT UNTIL 
 %left '+' '-'
 %left '*' '/'
 %%
@@ -117,6 +117,8 @@ code_block: code_block code_statement
 code_statement: lvalue ASSIGN expression ';'
               | while_statement
               | repeat_statement
+              | for_statement
+              | if_statement
               ; //exemplu de test; remove this
 
 
@@ -151,8 +153,23 @@ list_expression: list_expression LOGICAL_OP bool_expression
 
 while_statement: WHILE list_expression '{' code_block '}'
                ;
+
 repeat_statement : REPEAT '{' code_block '}' UNTIL list_expression ';'
                  ;
+
+for_statement: FOR IDENTIFIER IN lvalue  '{' code_block '}'
+             ;
+
+if_statement: IF list_expression '{' code_block '}' elseif_statement else_statement
+            ;
+
+elseif_statement: elseif_statement ELSE_IF list_expression '{' code_block '}'
+                | /* epsilon */
+                ;
+
+else_statement: ELSE '{' code_block '}'
+              | /* epsilon */
+              ;
 %%
 
 int yyerror(char * s){

@@ -32,6 +32,25 @@ methods:
 _FUNCTIONS_
 function floatFunc() : float 
 {
+    for $a in $b
+    {
+        if $b < 10
+        {
+            $b <- $b + 1;
+        }
+        elif $b > 10
+        {
+
+        }
+        elif $b != 0
+        {
+            
+        }
+         else
+        {
+
+        }
+    }
     return $x + $y;
 }
 

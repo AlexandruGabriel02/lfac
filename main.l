@@ -25,6 +25,7 @@
 "elif" {return ELSE_IF;}
 "while" {return WHILE;}
 "for" {return FOR;}
+"in" {return IN;}
 "repeat" {return REPEAT;}
 "until" {return UNTIL;}
 
