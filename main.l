@@ -20,6 +20,17 @@
 "const" {return DECL_CONSTANT;}
 "int"|"float"|"char"|"string"|"bool" {return DECL_TYPE;}
 
+"if" {return IF;}
+"else" {return ELSE;}
+"elif" {return ELSE_IF;}
+"while" {return WHILE;}
+"for" {return FOR;}
+"repeat" {return REPEAT;}
+"until" {return UNTIL;}
+
+">"|">="|"<"|"<="|"=="|"!=" {return COMPARATION_OP;}
+"and"|"or"|"xor" {return LOGICAL_OP;}
+
 "return" {return FUNC_RETURN;}
 
 $[_a-zA-Z][_a-zA-Z0-9]* {return IDENTIFIER;}

@@ -16,7 +16,10 @@ int yylex(void);
 %token IDENTIFIER ASSIGN NAME POINT_TO
 %token STRUCT_VARS STRUCT_METHODS
 %token FUNC_RETURN
-
+%token COMPARATION_OP LOGICAL_OP
+%token IF ELSE ELSE_IF WHILE FOR REPEAT UNTIL 
+%left '+' '-'
+%left '*' '/'
 %%
 program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
 
@@ -93,13 +96,13 @@ list_param: list_param ',' parameter
 parameter: decl_var_dimension DECL_TYPE IDENTIFIER
          | decl_var_dimension DECL_CONSTANT DECL_TYPE IDENTIFIER
         ;
-return_instr: FUNC_RETURN rvalue ';'
+return_instr: FUNC_RETURN expression ';'
 
 function_call: NAME '(' ')'
              | NAME '(' call_list ')'
              ;
-call_list: call_list ',' rvalue
-         | rvalue
+call_list: call_list ',' expression
+         | expression
          ;
 
 
@@ -111,7 +114,9 @@ code_block: code_block code_statement
           | /* epsilon */
           ;
 //de adaugat mai multe
-code_statement: lvalue ASSIGN rvalue ';'
+code_statement: lvalue ASSIGN expression ';'
+              | while_statement
+              | repeat_statement
               ; //exemplu de test; remove this
 
 
@@ -129,8 +134,25 @@ rvalue:   function_call
 mem_location: mem_location '[' INT_VAL ']'
             | /* epsilon */
             ;
+expression: rvalue
+          | expression '+' expression 
+          | expression '-' expression
+          | expression '*' expression
+          | expression '/' expression
+          | '(' expression ')'
+          ;
+bool_expression: expression COMPARATION_OP expression
+                | expression
+                ;
 
+list_expression: list_expression LOGICAL_OP bool_expression
+               | bool_expression
+               ;
 
+while_statement: WHILE list_expression '{' code_block '}'
+               ;
+repeat_statement : REPEAT '{' code_block '}' UNTIL list_expression ';'
+                 ;
 %%
 
 int yyerror(char * s){
