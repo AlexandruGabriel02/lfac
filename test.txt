@@ -1,10 +1,10 @@
 _GLOBAL_VARS_
 var int $x, $x;
-var string $str, $a <- 0.55, $b <- 'ABC';
-var[10][5][1][4] bool $b;
-var[8] const float $fl <- 12, $c <- 12;
-custom[5] myCustom $x(102, 'myString');
-custom emptyObj $x;
+var string $str, $a <- 'xA01', $b <- 'ABC';
+array bool $b <- [ 12.3, 1, 9, 'abv'], $arr;
+var const float $fl <- 12., $c <- 12.12;
+custom myCustom $x(102, 'myString');
+custom const emptyObj $x;
 
 _STRUCTURES_
 custom myCustom
@@ -66,7 +66,7 @@ function intFunc1() : int
     return 20;
 }
 
-function intFunc2 (var const int $x, var[20][10] string $str) : int
+function intFunc2 (custom const myCustom $x, array string $str) : int
 { 
     while $a<$b
     {
@@ -78,6 +78,6 @@ function intFunc2 (var const int $x, var[20][10] string $str) : int
 _BEGIN_PROGR_
 
 $c[5] <- 100;
-$x <- intFunc1($x * $y + $z - ($a * $b - $c));
+$x <- intFunc1($x * $y + $z - ($a * $b - $c)) % 10;
 $obj->$x <- $obj->functie($a, 12, 'abc', intFunc2());
-$mat[10][10]->$b[10] <- functie($x->functie(10), $x->$y);
+$mat[10]->$b[10] <- functie($x->functie(10), $x->$y);

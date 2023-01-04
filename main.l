@@ -13,6 +13,7 @@
 "var" {return DECL_VAR;}
 "custom" {return DECL_CUSTOM;}
 "function" {return DECL_FUNCTION;}
+"array" {return DECL_ARRAY;}
 
 "vars" {return STRUCT_VARS;}
 "methods" {return STRUCT_METHODS;}

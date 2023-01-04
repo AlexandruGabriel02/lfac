@@ -7,10 +7,10 @@ extern int yylineno;
 int yyerror(char* s);
 int yylex(void);
 %}
- 
+
 %start program
 %token LABEL_VAR LABEL_FUNC LABEL_STRUCT LABEL_MAIN
-%token DECL_VAR DECL_CUSTOM DECL_FUNCTION
+%token DECL_VAR DECL_CUSTOM DECL_FUNCTION DECL_ARRAY
 %token DECL_CONSTANT DECL_TYPE
 %token STRING_VAL INT_VAL FLOAT_VAL
 %token IDENTIFIER ASSIGN NAME POINT_TO
@@ -19,7 +19,7 @@ int yylex(void);
 %token COMPARATION_OP LOGICAL_OP
 %token IF ELSE ELSE_IF WHILE FOR IN REPEAT UNTIL 
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
 %%
 program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
 
@@ -30,32 +30,32 @@ global_section: LABEL_VAR var_declaration ;
 var_declaration: var_declaration decl_line ';' 
                 | /* epsilon */
                 ;
-decl_var_dimension: DECL_VAR 
-                  | decl_var_dimension '[' INT_VAL ']'
-                  ;
-decl_struct_dimension: DECL_CUSTOM
-                     | decl_struct_dimension '[' INT_VAL ']'
-                     ;
-decl_line: decl_var_dimension DECL_TYPE var_list 
-          | decl_var_dimension DECL_CONSTANT DECL_TYPE const_list
-          | decl_struct_dimension NAME var_list 
-          | decl_struct_dimension DECL_CONSTANT NAME const_list
+decl_line: DECL_VAR DECL_TYPE var_list
+          | DECL_VAR DECL_CONSTANT DECL_TYPE var_list
+          | DECL_CUSTOM NAME custom_list 
+          | DECL_CUSTOM DECL_CONSTANT NAME custom_list
+          | DECL_ARRAY DECL_TYPE array_list
+          | DECL_ARRAY DECL_CONSTANT DECL_TYPE array_list
           ;
 var_list: IDENTIFIER 
         | IDENTIFIER ASSIGN var_value
-        | IDENTIFIER '(' initializer_list ')'
         | var_list ',' IDENTIFIER
         | var_list ',' IDENTIFIER ASSIGN var_value
         ;
-const_list: IDENTIFIER ASSIGN var_value
-        | IDENTIFIER '(' initializer_list ')'
-        | var_list ',' IDENTIFIER ASSIGN var_value
-        ;
+custom_list: IDENTIFIER 
+           | IDENTIFIER '(' initializer_list ')'
+           | custom_list ',' IDENTIFIER
+           | custom_list ',' IDENTIFIER '(' initializer_list ')'
+           ;
+array_list: IDENTIFIER 
+          | IDENTIFIER ASSIGN '[' initializer_list ']'
+          | array_list ',' IDENTIFIER 
+          | array_list ',' IDENTIFIER ASSIGN '[' initializer_list ']'
+
 var_value: INT_VAL | STRING_VAL | FLOAT_VAL ;
 initializer_list: initializer_list ',' var_value 
                 | var_value
                 ;
-
 
 
 /* Structuri definite de user (structura aka 'custom') */
@@ -93,8 +93,12 @@ singular_function: DECL_FUNCTION NAME '(' list_param ')' ':' DECL_TYPE
 list_param: list_param ',' parameter
           | parameter
           ; 
-parameter: decl_var_dimension DECL_TYPE IDENTIFIER
-         | decl_var_dimension DECL_CONSTANT DECL_TYPE IDENTIFIER
+parameter: DECL_VAR DECL_TYPE IDENTIFIER
+         | DECL_VAR DECL_CONSTANT DECL_TYPE IDENTIFIER
+         | DECL_ARRAY DECL_TYPE IDENTIFIER
+         | DECL_ARRAY DECL_CONSTANT DECL_TYPE IDENTIFIER
+         | DECL_CUSTOM NAME IDENTIFIER
+         | DECL_CUSTOM DECL_CONSTANT NAME IDENTIFIER
         ;
 return_instr: FUNC_RETURN expression ';'
 
@@ -119,9 +123,7 @@ code_statement: lvalue ASSIGN expression ';'
               | repeat_statement
               | for_statement
               | if_statement
-              ; //exemplu de test; remove this
-
-
+              ; 
 
 
 /* Diverse */
@@ -133,7 +135,7 @@ rvalue:   function_call
         | IDENTIFIER mem_location POINT_TO function_call
         | lvalue
         ;
-mem_location: mem_location '[' INT_VAL ']'
+mem_location: '[' INT_VAL ']' 
             | /* epsilon */
             ;
 expression: rvalue
@@ -141,6 +143,7 @@ expression: rvalue
           | expression '-' expression
           | expression '*' expression
           | expression '/' expression
+          | expression '%' expression
           | '(' expression ')'
           ;
 bool_expression: expression COMPARATION_OP expression
