@@ -1,11 +1,3 @@
-_GLOBAL_VARS_
-var int $x, $x <- false;
-var string $str, $a <- "xA01", $b <- "ABC";
-array bool $b <- [ 12.3, true, 9., 'a'], $arr;
-var const float $fl <- 12., $c <- 12.12;
-custom myCustom $x(102, "myString");
-custom const emptyObj $x;
-
 _STRUCTURES_
 custom myCustom
 {
@@ -28,6 +20,15 @@ custom emptyObj
 vars:
 methods:
 }
+
+_GLOBAL_VARS_
+var int $x, $x <- false;
+var string $str, $a <- "xA01", $b <- "ABC";
+array bool $b <- [ 12.3, true, 9., 'a'], $arr;
+var const float $fl <- 12., $c <- 12.12;
+custom myCustom $x(102, "myString");
+custom const emptyObj $x;
+
 
 _FUNCTIONS_
 function floatFunc() : float 
@@ -66,7 +67,7 @@ function intFunc1() : int
     return 20;
 }
 
-function intFunc2 (custom const myCustom $x, array string $str) : int
+function intFunc2 (var const int $x, var string $str) : int
 { 
     var char $character;
     while $a<$b

@@ -36,7 +36,7 @@ int yylex(void);
 %type<list> initializer_list
 
 %%
-program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
+program: struct_section global_section function_section main_section {printf("program corect sintactic\n");}
 
 
 /* Variabile globale */
@@ -57,10 +57,10 @@ var_list: IDENTIFIER {pushToSymTable("variabila", $1, NULL);}
         | var_list ',' IDENTIFIER {pushToSymTable("variabila", $3, NULL);}
         | var_list ',' IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $3, $5);}
         ;
-custom_list: IDENTIFIER 
-           | IDENTIFIER '(' initializer_list ')'
-           | custom_list ',' IDENTIFIER
-           | custom_list ',' IDENTIFIER '(' initializer_list ')'
+custom_list: IDENTIFIER {pushToSymTable("custom", $1, NULL);}
+           | IDENTIFIER '(' initializer_list ')' {pushToSymTable("custom", $1, &$3);}
+           | custom_list ',' IDENTIFIER {pushToSymTable("custom", $3, NULL);}
+           | custom_list ',' IDENTIFIER '(' initializer_list ')' {pushToSymTable("custom", $3, &$5);}
            ;
 array_list: IDENTIFIER {pushToSymTable("array", $1, NULL);}
           | IDENTIFIER ASSIGN '[' initializer_list ']'  {pushToSymTable("array", $1, &$4);}
@@ -75,12 +75,12 @@ initializer_list: initializer_list ',' var_value {addToList(&$$, $3);}
 
 
 /* Structuri definite de user (structura aka 'custom') */
-struct_section: LABEL_STRUCT  struct_declaration;
+struct_section: LABEL_STRUCT struct_declaration {resetStructContext();};
 
 struct_declaration: struct_declaration singular_struct
                   | /* epsilon */
                   ;
-singular_struct: DECL_CUSTOM NAME '{' struct_code '}'
+singular_struct: DECL_CUSTOM NAME {setStructContext($2);} '{' struct_code '}'
                 ;
 struct_code: STRUCT_VARS ':' str_vars_section STRUCT_METHODS ':' str_methods_section
            | /* epsilon */
@@ -97,24 +97,24 @@ function_section: LABEL_FUNC func_declaration;
 func_declaration: func_declaration singular_function
                 | /* epsilon */ 
                 ;
-singular_function: DECL_FUNCTION NAME '(' list_param ')' ':' DECL_TYPE 
+singular_function: DECL_FUNCTION NAME '(' list_param ')' ':' DECL_TYPE {pushToFuncTable($2, $7);}
                 '{' code_block return_instr '}' 
-                | DECL_FUNCTION NAME '(' ')' ':' DECL_TYPE 
+                | DECL_FUNCTION NAME '(' ')' ':' DECL_TYPE {pushToFuncTable($2, $6);}
                 '{' code_block return_instr '}'
-                | DECL_FUNCTION NAME '(' list_param ')' 
+                | DECL_FUNCTION NAME '(' list_param ')' {pushToFuncTable($2, "void");}
                 '{' code_block '}'
-                | DECL_FUNCTION NAME '(' ')'
+                | DECL_FUNCTION NAME '(' ')' {pushToFuncTable($2, "void");}
                 '{' code_block '}'
                 ;
 list_param: list_param ',' parameter
-          | parameter
+          | {initParams();} parameter
           ; 
-parameter: DECL_VAR DECL_TYPE IDENTIFIER
-         | DECL_VAR DECL_CONSTANT DECL_TYPE IDENTIFIER
-         | DECL_ARRAY DECL_TYPE IDENTIFIER
-         | DECL_ARRAY DECL_CONSTANT DECL_TYPE IDENTIFIER
-         | DECL_CUSTOM NAME IDENTIFIER
-         | DECL_CUSTOM DECL_CONSTANT NAME IDENTIFIER
+parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3);}
+         | DECL_VAR DECL_CONSTANT DECL_TYPE IDENTIFIER {addParam($3, true, $4);}
+        //  | DECL_ARRAY DECL_TYPE IDENTIFIER
+        //  | DECL_ARRAY DECL_CONSTANT DECL_TYPE IDENTIFIER
+        //  | DECL_CUSTOM NAME IDENTIFIER
+        //  | DECL_CUSTOM DECL_CONSTANT NAME IDENTIFIER
         ;
 return_instr: FUNC_RETURN expression ';'
 
@@ -192,13 +192,17 @@ else_statement: ELSE '{' code_block '}'
               ;
 %%
 
-int yyerror(char * s){
-printf("eroare: %s la linia:%d\n",s,yylineno);
+int yyerror(char * s)
+{
+    printf("eroare: %s la linia:%d\n",s,yylineno);
 }
 
-int main(int argc, char** argv){
-yyin=fopen(argv[1],"r");
-yyparse();
+int main(int argc, char** argv)
+{
+    yyin=fopen(argv[1],"r");
+    yyparse();
 
-printTable();
+    printSymTable("symbol_table.txt");
+    printFuncTable("symbol_table_functions.txt");
+
 } 
