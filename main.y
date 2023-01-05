@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "semantics.h"
 extern FILE* yyin;
 extern char* yytext;
 extern int yylineno;
@@ -8,18 +9,32 @@ int yyerror(char* s);
 int yylex(void);
 %}
 
+%union
+{
+    char* strval;
+    struct List list;
+}
+
 %start program
+
 %token LABEL_VAR LABEL_FUNC LABEL_STRUCT LABEL_MAIN
 %token DECL_VAR DECL_CUSTOM DECL_FUNCTION DECL_ARRAY
-%token DECL_CONSTANT DECL_TYPE
-%token STRING_VAL INT_VAL FLOAT_VAL
-%token IDENTIFIER ASSIGN NAME POINT_TO
+%token<strval> DECL_TYPE 
+%token DECL_CONSTANT 
+%token<strval> STRING_VAL INT_VAL FLOAT_VAL CHAR_VAL BOOL_VAL
+%token<strval> IDENTIFIER NAME 
+%token ASSIGN POINT_TO
 %token STRUCT_VARS STRUCT_METHODS
 %token FUNC_RETURN
 %token COMPARATION_OP LOGICAL_OP
 %token IF ELSE ELSE_IF WHILE FOR IN REPEAT UNTIL 
+
 %left '+' '-'
 %left '*' '/' '%'
+
+%type<strval> var_value
+%type<list> initializer_list
+
 %%
 program: global_section struct_section function_section main_section {printf("program corect sintactic\n");}
 
@@ -30,31 +45,32 @@ global_section: LABEL_VAR var_declaration ;
 var_declaration: var_declaration decl_line ';' 
                 | /* epsilon */
                 ;
-decl_line: DECL_VAR DECL_TYPE var_list
-          | DECL_VAR DECL_CONSTANT DECL_TYPE var_list
-          | DECL_CUSTOM NAME custom_list 
-          | DECL_CUSTOM DECL_CONSTANT NAME custom_list
-          | DECL_ARRAY DECL_TYPE array_list
-          | DECL_ARRAY DECL_CONSTANT DECL_TYPE array_list
+decl_line: DECL_VAR DECL_TYPE {setVarType($2);} var_list {resetGlobal();}
+          | DECL_VAR DECL_CONSTANT DECL_TYPE {setVarType($3); setConstant();} var_list {resetGlobal();}
+          | DECL_CUSTOM NAME {setVarType($2);} custom_list {resetGlobal();}
+          | DECL_CUSTOM DECL_CONSTANT NAME {setVarType($3); setConstant();} custom_list {resetGlobal();}
+          | DECL_ARRAY DECL_TYPE {setVarType($2);} array_list {resetGlobal();}
+          | DECL_ARRAY DECL_CONSTANT DECL_TYPE {setVarType($3); setConstant();} array_list {resetGlobal();}
           ;
-var_list: IDENTIFIER 
-        | IDENTIFIER ASSIGN var_value
-        | var_list ',' IDENTIFIER
-        | var_list ',' IDENTIFIER ASSIGN var_value
+var_list: IDENTIFIER {pushToSymTable("variabila", $1, NULL);}
+        | IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $1, $3);}
+        | var_list ',' IDENTIFIER {pushToSymTable("variabila", $3, NULL);}
+        | var_list ',' IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $3, $5);}
         ;
 custom_list: IDENTIFIER 
            | IDENTIFIER '(' initializer_list ')'
            | custom_list ',' IDENTIFIER
            | custom_list ',' IDENTIFIER '(' initializer_list ')'
            ;
-array_list: IDENTIFIER 
-          | IDENTIFIER ASSIGN '[' initializer_list ']'
-          | array_list ',' IDENTIFIER 
-          | array_list ',' IDENTIFIER ASSIGN '[' initializer_list ']'
+array_list: IDENTIFIER {pushToSymTable("array", $1, NULL);}
+          | IDENTIFIER ASSIGN '[' initializer_list ']'  {pushToSymTable("array", $1, &$4);}
+          | array_list ',' IDENTIFIER {pushToSymTable("array", $3, NULL);}
+          | array_list ',' IDENTIFIER ASSIGN '[' initializer_list ']' {pushToSymTable("array", $3, &$6);}
 
-var_value: INT_VAL | STRING_VAL | FLOAT_VAL ;
-initializer_list: initializer_list ',' var_value 
-                | var_value
+var_value: INT_VAL {$$ = strdup($1);} | STRING_VAL {$$ = strdup($1);} 
+         | FLOAT_VAL {$$ = strdup($1);} | CHAR_VAL {$$ = strdup($1);} | BOOL_VAL {$$ = strdup($1);} ;
+initializer_list: initializer_list ',' var_value {addToList(&$$, $3);}
+                | var_value {initList(&$$); addToList(&$$, $1);}
                 ;
 
 
@@ -123,6 +139,7 @@ code_statement: lvalue ASSIGN expression ';'
               | repeat_statement
               | for_statement
               | if_statement
+              | decl_line ';'
               ; 
 
 
@@ -182,4 +199,6 @@ printf("eroare: %s la linia:%d\n",s,yylineno);
 int main(int argc, char** argv){
 yyin=fopen(argv[1],"r");
 yyparse();
+
+printTable();
 } 

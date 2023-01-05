@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include "declarations.h"
 #include "y.tab.h"
 %}
 %option noyywrap
@@ -19,7 +20,7 @@
 "methods" {return STRUCT_METHODS;}
 
 "const" {return DECL_CONSTANT;}
-"int"|"float"|"char"|"string"|"bool" {return DECL_TYPE;}
+"int"|"float"|"char"|"string"|"bool" {yylval.strval = strdup(yytext); return DECL_TYPE;}
 
 "if" {return IF;}
 "else" {return ELSE;}
@@ -30,20 +31,22 @@
 "repeat" {return REPEAT;}
 "until" {return UNTIL;}
 
+\"[_a-zA-Z0-9]*\" {yylval.strval = strdup(yytext); return STRING_VAL;}
+\'[a-zA-Z0-9]\' {yylval.strval = strdup(yytext); return CHAR_VAL;}
+0|([1-9][0-9]*) {yylval.strval = strdup(yytext); return INT_VAL;}
+(0|[1-9][0-9]*)\.[0-9]* {yylval.strval = strdup(yytext); return FLOAT_VAL;}
+"true"|"false" {yylval.strval = strdup(yytext); return BOOL_VAL;} 
+
 ">"|">="|"<"|"<="|"=="|"!=" {return COMPARATION_OP;}
 "and"|"or"|"xor" {return LOGICAL_OP;}
 
 "return" {return FUNC_RETURN;}
 
-$[_a-zA-Z][_a-zA-Z0-9]* {return IDENTIFIER;}
-[_a-zA-Z][_a-zA-Z0-9]* {return NAME;}
+$[_a-zA-Z][_a-zA-Z0-9]* {yylval.strval = strdup(yytext); return IDENTIFIER;}
+[_a-zA-Z][_a-zA-Z0-9]* {yylval.strval = strdup(yytext); return NAME;}
 
 "<-" {return ASSIGN;}
 "->" {return POINT_TO;}
-
-'[_a-zA-Z0-9]*' {return STRING_VAL;}
-0|([1-9][0-9]*) {return INT_VAL;}
-(0|[1-9][0-9]*)\.[0-9]* {return FLOAT_VAL;}
 
 
 [ \t] ;
