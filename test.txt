@@ -84,3 +84,7 @@ $t <- intFunc1($obj->$y + "ceva" - ($a * $b - $b)) % 10;
 array bool $boolarr;
 $boolarr[2] <- $obj->functieBool(intFunc2());
 $obj->functieVoid(intFunc2());
+
+TypeOf($bb[2] + $bb[1] + false);
+TypeOf( (intFunc2() + $z) * 3 / 2 );
+TypeOf($obj->functieVoid(intFunc2()));

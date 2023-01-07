@@ -31,6 +31,9 @@
 "repeat" {return REPEAT;}
 "until" {return UNTIL;}
 
+"TypeOf" {return TYPE_OF;}
+"Eval" {return EVAL;}
+
 \"[_a-zA-Z0-9]*\" {yylval.strval = strdup(yytext); return STRING_VAL;}
 \'[a-zA-Z0-9]\' {yylval.strval = strdup(yytext); return CHAR_VAL;}
 0|-?([1-9][0-9]*) {yylval.strval = strdup(yytext); return INT_VAL;}

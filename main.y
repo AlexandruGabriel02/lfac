@@ -28,6 +28,7 @@ int yylex(void);
 %token FUNC_RETURN
 %token COMPARATION_OP LOGICAL_OP
 %token IF ELSE ELSE_IF WHILE FOR IN REPEAT UNTIL 
+%token TYPE_OF EVAL
 
 %left '+' '-'
 %left '*' '/' '%'
@@ -36,7 +37,7 @@ int yylex(void);
 %type<list> initializer_list
 
 %%
-program: struct_section global_section function_section main_section {printf("program corect sintactic\n");}
+program: struct_section global_section function_section main_section {printf("Program corect sintactic!\n");}
 
 
 /* Variabile globale */
@@ -142,6 +143,7 @@ code_statement: lvalue ASSIGN expression ';' {checkMatchingType($1, $3);}
               | decl_line ';'
               | function_call ';'
               | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call ';'
+              | TYPE_OF '(' expression ')' ';' {printf("Tipul expresiei de la linia %d: %s\n", yylineno, $3);}
               ; 
 
 
