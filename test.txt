@@ -55,7 +55,7 @@ function floatFunc() : float
     return 12.;
 }
 
-function intFunc1() : int 
+function intFunc1(var int $ds) : int 
 {
     repeat
     {
@@ -79,12 +79,12 @@ function intFunc2 (var const int $x, var string $str) : int
 
 _BEGIN_PROGR_
 
-$t <- intFunc1($obj->$y + "ceva" - ($a * $b - $b)) % 10;
+array bool $boolarr <- [true];
 
-array bool $boolarr;
-$boolarr[2] <- $obj->functieBool(intFunc2());
-$obj->functieVoid(intFunc2());
+$boolarr[2] <- $obj->functieBool('l' + 'f' + 'a' + 'c');
+$obj->functieVoid();
 
+TypeOf("un string obisnuit");
 TypeOf($bb[2] + $bb[1] + false);
-TypeOf( (intFunc2() + $z) * 3 / 2 );
-TypeOf($obj->functieVoid(intFunc2()));
+TypeOf( (intFunc2(1 + 2 / 2, "abc") + $z) * 3 / 2 );
+TypeOf($obj->functieVoid());

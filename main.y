@@ -34,7 +34,7 @@ int yylex(void);
 %left '*' '/' '%'
 
 %type<strval> var_value rvalue lvalue function_call expression
-%type<list> initializer_list
+%type<list> initializer_list call_list
 
 %%
 program: struct_section global_section function_section main_section {printf("Program corect sintactic!\n");}
@@ -119,11 +119,11 @@ parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3);}
         ;
 return_instr: FUNC_RETURN expression ';'
 
-function_call: NAME '(' ')' {checkFuncName($1); /* checkFuncParams(NULL) */ $$ = getTypeFromFuncName($1);}
-             | NAME '(' {checkFuncName($1);} call_list ')' {/* checkFuncParams(NULL) */ $$ = getTypeFromFuncName($1);}
+function_call: NAME '(' ')' {checkFuncName($1); checkFuncParams($1, NULL); $$ = getTypeFromFuncName($1);}
+             | NAME '(' {checkFuncName($1);} call_list ')' {checkFuncParams($1, &$4); $$ = getTypeFromFuncName($1);}
              ;
-call_list: call_list ',' expression
-         | expression
+call_list: call_list ',' expression {addToList(&$$, $3);}
+         | expression {initList(&$$); addToList(&$$, $1);}
          ;
 
 
@@ -135,7 +135,7 @@ code_block: code_block code_statement
           | /* epsilon */
           ;
 
-code_statement: lvalue ASSIGN expression ';' {checkMatchingType($1, $3);}
+code_statement: lvalue {checkIfConstAssign();} ASSIGN expression ';' {checkMatchingType($1, $4);}
               | while_statement
               | repeat_statement
               | for_statement

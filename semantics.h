@@ -102,9 +102,14 @@ void setConstant()
     isConstant = true;
 }
 
-void resetGlobal()
+void resetConstant()
 {
     isConstant = false;
+}
+
+void resetGlobal()
+{
+    resetConstant();
     free(currType);
 }
 
@@ -118,6 +123,17 @@ void resetStructContext()
 {
     free(structContext);
     structContext = strdup("none");
+}
+
+void checkIfConstAssign()
+{
+    if (isConstant)
+    {
+        printf("[EROARE linia %d]: Atribuire catre o variabila constanta\n",
+         yylineno);
+        exit(-1);
+    }
+    resetConstant();
 }
 
 bool isDeclaredVar(const char* p_name)
@@ -166,7 +182,7 @@ void checkMatchingType(const char* p_type1, const char* p_type2)
 {
     if (strcmp(p_type1, p_type2) != 0)
     {
-        printf("[EROARE linia %d]: Tipuri de date diferite utilizate in expresie / atribuire (de ex. %s si %s)\n",
+        printf("[EROARE linia %d]: Tipuri de date diferite utilizate in expresie / atribuire / parametri (de ex. %s si %s)\n",
          yylineno, p_type1, p_type2);
         exit(-1);
     }
@@ -196,6 +212,9 @@ void checkIfDeclaredVar(const char* p_type1, const char* p_name1, const char* p_
         {
             found = true;
             custom = strdup(symbolTable[i].value.valType);
+
+            if (symbolTable[i].isConstant)
+                setConstant();
         }
     }
     
@@ -207,11 +226,14 @@ void checkIfDeclaredVar(const char* p_type1, const char* p_name1, const char* p_
 
     if (p_type2 != NULL) 
     {
+        resetConstant();
         for (int i = 0; i < symCount; i++)
         {
             if (strcmp(p_type2, symbolTable[i].symType) == 0 && strcmp(p_name2, symbolTable[i].name) == 0
                 && strcmp(custom, symbolTable[i].structName) == 0)
             {
+                if (symbolTable[i].isConstant)
+                    setConstant();
                 return;
             }
         }
@@ -367,6 +389,71 @@ char* getTypeFromFuncName(const char* p_funcName)
     }
 
    return type;
+}
+
+void checkFuncParams(const char* p_funcName, struct List* callTypes)
+{
+    struct ListNode* paramType;
+    int paramCount = 0;
+
+    for (int i = 0; i < funcCount; i++)
+    {
+        if (!strcmp(p_funcName, funcTable[i].name))
+        {
+            paramType = funcTable[i].params.typeList.begin;
+            while (paramType != NULL)
+            {
+                paramCount++;
+
+                if (paramType == funcTable[i].params.typeList.end)
+                    break;
+                paramType = paramType -> next;
+            }
+            paramType = funcTable[i].params.typeList.begin;
+
+            break;
+        }
+    }
+
+    if (callTypes == NULL)
+    {
+        if (paramCount != 0)
+        {
+            printf("[EROARE linia %d]: Numar invalid de parametri pentru apelul functiei %s\n", yylineno, p_funcName);
+            exit(-1);
+        }
+        return;
+    }
+
+    struct ListNode* callType;
+    int callCount = 0;
+
+    callType = callTypes->begin;
+    while (callType != NULL)
+    {
+        callCount++;
+        if (callType == callTypes->end)
+            break;
+        callType = callType -> next;
+    }
+    callType = callTypes->begin;
+
+    if (paramCount != callCount)
+    {
+        printf("[EROARE linia %d]: Numar invalid de parametri pentru apelul functiei %s\n", yylineno, p_funcName);
+        exit(-1);
+    }
+
+    while (callType != NULL)
+    {
+        checkMatchingType(paramType->val, callType->val);
+
+        if (callType == callTypes->end)
+            break;
+        paramType = paramType->next;
+        callType = callType->next;
+    }
+
 }
 
 void initParams()
