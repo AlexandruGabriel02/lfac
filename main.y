@@ -32,7 +32,7 @@ int yylex(void);
 %left '+' '-'
 %left '*' '/' '%'
 
-%type<strval> var_value
+%type<strval> var_value rvalue lvalue function_call expression
 %type<list> initializer_list
 
 %%
@@ -118,8 +118,8 @@ parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3);}
         ;
 return_instr: FUNC_RETURN expression ';'
 
-function_call: NAME '(' ')'
-             | NAME '(' call_list ')'
+function_call: NAME '(' ')' {checkFuncName($1); /* checkFuncParams(NULL) */ $$ = getTypeFromFuncName($1);}
+             | NAME '(' {checkFuncName($1);} call_list ')' {/* checkFuncParams(NULL) */ $$ = getTypeFromFuncName($1);}
              ;
 call_list: call_list ',' expression
          | expression
@@ -133,35 +133,37 @@ main_section: LABEL_MAIN code_block;
 code_block: code_block code_statement
           | /* epsilon */
           ;
-//de adaugat mai multe
-code_statement: lvalue ASSIGN expression ';'
+
+code_statement: lvalue ASSIGN expression ';' {checkMatchingType($1, $3);}
               | while_statement
               | repeat_statement
               | for_statement
               | if_statement
               | decl_line ';'
+              | function_call ';'
+              | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call ';'
               ; 
 
 
 /* Diverse */
-lvalue: IDENTIFIER {checkIfDeclared("variabila", $1, NULL, NULL);}
-      | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclared("array", $1, NULL, NULL);}
-      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclared("custom", $1, "variabila", $3);}
-      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclared("custom", $1, "array", $3);}
+lvalue: IDENTIFIER {checkIfDeclaredVar("variabila", $1, NULL, NULL); $$ = getTypeFromVarName($1);}
+      | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclaredVar("array", $1, NULL, NULL); $$ = getTypeFromVarName($1);}
+      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclaredVar("custom", $1, "variabila", $3); $$ = getTypeFromVarName($3);}
+      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclaredVar("custom", $1, "array", $3); $$ = getTypeFromVarName($3);}
       ;
-rvalue:   function_call 
-        | var_value
-        | IDENTIFIER POINT_TO function_call {checkIfDeclared("custom", $1, NULL, NULL);}
-        | lvalue
+rvalue:   function_call {$$ = strdup($1);}
+        | var_value {$$ = getTypeFromVal($1);}
+        | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call {$$ = strdup($4);}
+        | lvalue {$$ = strdup($1);}
         ;
 
-expression: rvalue
-          | expression '+' expression 
-          | expression '-' expression
-          | expression '*' expression
-          | expression '/' expression
-          | expression '%' expression
-          | '(' expression ')'
+expression: rvalue {$$ = strdup($1);}
+          | expression '+' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
+          | expression '-' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
+          | expression '*' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
+          | expression '/' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
+          | expression '%' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
+          | '(' expression ')' {$$ = strdup($2);}
           ;
 bool_expression: expression COMPARATION_OP expression
                 | expression

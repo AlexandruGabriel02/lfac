@@ -26,7 +26,7 @@ var int $t, $z <- 2;
 var string $str, $a <- "xA01", $b <- "ABC";
 array bool $bb <- [ true, true, false, false], $arr;
 var const float $fl <- 12., $c <- 12.12;
-custom myCustom $obj(102, "myString");
+custom myCustom $obj(102, "string_type");
 custom const emptyObj $obj2;
 
 
@@ -37,7 +37,7 @@ function floatFunc() : float
     {
         if $b < 10
         {
-            $b <- $b + 1;
+            $z <- $z + 1;
         }
         elif $b > 10
         {
@@ -59,9 +59,9 @@ function intFunc1() : int
 {
     repeat
     {
-        $b <- 5;
+        $b <- "altceva";
         while $a < $b
-        {$a <- 3;}
+        {$z <- 3;}
     }
     until $b != $a and $a != $b;
     return 20;
@@ -72,12 +72,15 @@ function intFunc2 (var const int $x, var string $str) : int
     var char $character;
     while $a<$b
     {
-      $a <- 2;  
+      $z <- 2;  
     } 
     return 10;
 }
 
 _BEGIN_PROGR_
 
-$t <- intFunc1($obj->$x * $obj->$y + $z - ($a * $b - $c)) % 10;
-$obj->$x <- $obj->functie($a, 12, "a", intFunc2());
+$t <- intFunc1($obj->$y + "ceva" - ($a * $b - $b)) % 10;
+
+array bool $boolarr;
+$boolarr[2] <- $obj->functieBool(intFunc2());
+$obj->functieVoid(intFunc2());

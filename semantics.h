@@ -79,6 +79,7 @@ struct Functions
 };
 /* --- */
 
+/* Variabile globale */
 char* structContext;
 char* currType;
 bool isConstant = false;
@@ -86,6 +87,7 @@ int symCount = 0;
 int funcCount;
 extern int yylineno;
 
+/* Tabele de simboluri */
 struct Symbols symbolTable[N];
 struct Functions funcTable[N];
 
@@ -118,7 +120,7 @@ void resetStructContext()
     structContext = strdup("none");
 }
 
-bool isDeclared(const char* p_name)
+bool isDeclaredVar(const char* p_name)
 {
     for (int i = 0; i < symCount; i++)
         if (strcmp(p_name, symbolTable[i].name) == 0)
@@ -145,6 +147,31 @@ char* getTypeFromVal(const char* value)
     return type;    
 }
 
+char* getTypeFromVarName(const char* p_varName)
+{
+    char* type;
+    for (int i = 0; i < symCount; i++)
+    {
+        if (strcmp(p_varName, symbolTable[i].name) == 0)
+        {
+            type = strdup(symbolTable[i].value.valType);
+            break;
+        }
+    }
+
+   return type;
+}
+
+void checkMatchingType(const char* p_type1, const char* p_type2)
+{
+    if (strcmp(p_type1, p_type2) != 0)
+    {
+        printf("[EROARE linia %d]: Tipuri de date diferite utilizate in expresie / atribuire (de ex. %s si %s)\n",
+         yylineno, p_type1, p_type2);
+        exit(-1);
+    }
+}
+
 bool isCorrectType(const char* p_val, const char* p_type)
 {
     char* actual_valType = getTypeFromVal(p_val);
@@ -158,7 +185,7 @@ bool isCorrectType(const char* p_val, const char* p_type)
     return true;
 }
 
-void checkIfDeclared(const char* p_type1, const char* p_name1, const char* p_type2, const char* p_name2)
+void checkIfDeclaredVar(const char* p_type1, const char* p_name1, const char* p_type2, const char* p_name2)
 {
     bool found = false;
     const char* custom;
@@ -193,12 +220,16 @@ void checkIfDeclared(const char* p_type1, const char* p_name1, const char* p_typ
         printf("[EROARE linia %d]: Variabila %s nedeclarata / folosita incorect\n", yylineno, p_name2);
         exit(-1);
     }
+    else if (!strcmp(p_type1, "custom")) //variabila acceseaza o functie dintr-o structura
+    {
+        setStructContext(custom);
+    }
 
 }
 
 void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val)
 {
-    if (isDeclared(p_identifier))
+    if (isDeclaredVar(p_identifier))
     {
         printf("[EROARE linia %d]: Variabila %s declarata deja\n", yylineno, p_identifier);
         exit(-1);
@@ -256,7 +287,7 @@ void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val
 
                 if (i == symCount)
                 {
-                    printf("[EROARE linia %d]: Nu exista structura %s\n",
+                    printf("[EROARE linia %d]: Nu exista variabile pentru structura %s\n",
                     yylineno, currType);
                     exit(-1);
                 }
@@ -279,7 +310,15 @@ void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val
                     }
 
                     if (l == symbolTable[symCount].value.list->end)
+                    {
+                        if (i + 1 < symCount && !strcmp(symbolTable[i + 1].structName, currType))
+                        {
+                            printf("[EROARE linia %d]: Prea putine elemente in initializarea variabilei custom %s\n",
+                            yylineno, p_identifier);
+                            exit(-1);
+                        }
                         break;
+                    }
                     l = l -> next;
                     i++;
                 }
@@ -292,6 +331,42 @@ void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val
     }
 
     symCount++;
+}
+
+bool isDeclaredFunc(const char* p_funcName)
+{
+    for (int i = 0; i < funcCount; i++)
+        if (!strcmp(p_funcName, funcTable[i].name) && !strcmp(structContext, funcTable[i].structName))
+        {
+            return true;
+        }
+    return false;
+}
+
+void checkFuncName(const char* p_funcName)
+{
+    if (!isDeclaredFunc(p_funcName))
+    {
+        printf("[EROARE linia %d]: Nu exista functia cu numele %s in contextul utilizat\n", yylineno, p_funcName);
+        exit(-1);
+    }
+
+    resetStructContext();
+}
+
+char* getTypeFromFuncName(const char* p_funcName)
+{
+    char* type;
+    for (int i = 0; i < funcCount; i++)
+    {
+        if (strcmp(p_funcName, funcTable[i].name) == 0)
+        {
+            type = strdup(funcTable[i].returnType);
+            break;
+        }
+    }
+
+   return type;
 }
 
 void initParams()
@@ -314,6 +389,12 @@ void addParam(const char* p_type, bool p_isConst, const char* p_name)
 
 void pushToFuncTable(const char* p_funcName, const char* p_returnType)
 {
+    if (isDeclaredFunc(p_funcName))
+    {
+        printf("[EROARE linia %d]: Exista deja o functie cu numele %s\n", yylineno, p_funcName);
+        exit(-1);
+    }
+
     funcTable[funcCount].name = strdup(p_funcName);
     funcTable[funcCount].returnType = strdup(p_returnType);
     funcTable[funcCount].structName = strdup(structContext);

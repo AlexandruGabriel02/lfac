@@ -33,8 +33,8 @@
 
 \"[_a-zA-Z0-9]*\" {yylval.strval = strdup(yytext); return STRING_VAL;}
 \'[a-zA-Z0-9]\' {yylval.strval = strdup(yytext); return CHAR_VAL;}
-0|([1-9][0-9]*) {yylval.strval = strdup(yytext); return INT_VAL;}
-(0|[1-9][0-9]*)\.[0-9]* {yylval.strval = strdup(yytext); return FLOAT_VAL;}
+0|-?([1-9][0-9]*) {yylval.strval = strdup(yytext); return INT_VAL;}
+(0|-?[1-9][0-9]*)\.[0-9]* {yylval.strval = strdup(yytext); return FLOAT_VAL;}
 "true"|"false" {yylval.strval = strdup(yytext); return BOOL_VAL;} 
 
 ">"|">="|"<"|"<="|"=="|"!=" {return COMPARATION_OP;}
