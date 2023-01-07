@@ -144,17 +144,17 @@ code_statement: lvalue ASSIGN expression ';'
 
 
 /* Diverse */
-lvalue: IDENTIFIER mem_location
-      | IDENTIFIER mem_location POINT_TO lvalue //structura
+lvalue: IDENTIFIER {checkIfDeclared("variabila", $1, NULL, NULL);}
+      | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclared("array", $1, NULL, NULL);}
+      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclared("custom", $1, "variabila", $3);}
+      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclared("custom", $1, "array", $3);}
       ;
-rvalue:   function_call
+rvalue:   function_call 
         | var_value
-        | IDENTIFIER mem_location POINT_TO function_call
+        | IDENTIFIER POINT_TO function_call {checkIfDeclared("custom", $1, NULL, NULL);}
         | lvalue
         ;
-mem_location: '[' INT_VAL ']' 
-            | /* epsilon */
-            ;
+
 expression: rvalue
           | expression '+' expression 
           | expression '-' expression

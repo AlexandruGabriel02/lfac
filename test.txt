@@ -22,12 +22,12 @@ methods:
 }
 
 _GLOBAL_VARS_
-var int $x, $x <- false;
+var int $t, $z <- 2;
 var string $str, $a <- "xA01", $b <- "ABC";
-array bool $b <- [ 12.3, true, 9., 'a'], $arr;
+array bool $bb <- [ true, true, false, false], $arr;
 var const float $fl <- 12., $c <- 12.12;
-custom myCustom $x(102, "myString");
-custom const emptyObj $x;
+custom myCustom $obj(102, "myString");
+custom const emptyObj $obj2;
 
 
 _FUNCTIONS_
@@ -52,7 +52,7 @@ function floatFunc() : float
 
         }
     }
-    return $x + $y;
+    return 12.;
 }
 
 function intFunc1() : int 
@@ -79,7 +79,5 @@ function intFunc2 (var const int $x, var string $str) : int
 
 _BEGIN_PROGR_
 
-$c[5] <- 100;
-$x <- intFunc1($x * $y + $z - ($a * $b - $c)) % 10;
+$t <- intFunc1($obj->$x * $obj->$y + $z - ($a * $b - $c)) % 10;
 $obj->$x <- $obj->functie($a, 12, "a", intFunc2());
-$mat[10]->$b[10] <- functie($x->functie(10), $x->$y);

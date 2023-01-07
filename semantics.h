@@ -84,6 +84,7 @@ char* currType;
 bool isConstant = false;
 int symCount = 0;
 int funcCount;
+extern int yylineno;
 
 struct Symbols symbolTable[N];
 struct Functions funcTable[N];
@@ -117,8 +118,92 @@ void resetStructContext()
     structContext = strdup("none");
 }
 
+bool isDeclared(const char* p_name)
+{
+    for (int i = 0; i < symCount; i++)
+        if (strcmp(p_name, symbolTable[i].name) == 0)
+        {
+            return true;
+        }
+    return false;
+}
+
+char* getTypeFromVal(const char* value)
+{
+    char* type;
+    if (value[0] == '\"')
+        type = strdup("string");
+    else if (value[0] == '\'')
+        type = strdup("char");
+    else if (!strcmp(value, "true") || !strcmp(value, "false")) 
+        type = strdup("bool");
+    else if (strchr(value, '.'))
+        type = strdup("float");
+    else 
+        type = strdup("int");
+
+    return type;    
+}
+
+bool isCorrectType(const char* p_val, const char* p_type)
+{
+    char* actual_valType = getTypeFromVal(p_val);
+    if (strcmp(p_type, actual_valType) != 0)
+    {
+        free(actual_valType);
+        return false;
+    }
+    free(actual_valType);
+
+    return true;
+}
+
+void checkIfDeclared(const char* p_type1, const char* p_name1, const char* p_type2, const char* p_name2)
+{
+    bool found = false;
+    const char* custom;
+    for (int i = 0; i < symCount; i++)
+    {
+        if (strcmp(p_type1, symbolTable[i].symType) == 0 && strcmp(p_name1, symbolTable[i].name) == 0
+        && strcmp(symbolTable[i].structName, "none") == 0)
+        {
+            found = true;
+            custom = strdup(symbolTable[i].value.valType);
+        }
+    }
+    
+    if (found == false)
+    {
+        printf("[EROARE linia %d]: Variabila %s nedeclarata / folosita incorect\n", yylineno, p_name1);
+        exit(-1);
+    }
+
+    if (p_type2 != NULL) 
+    {
+        for (int i = 0; i < symCount; i++)
+        {
+            if (strcmp(p_type2, symbolTable[i].symType) == 0 && strcmp(p_name2, symbolTable[i].name) == 0
+                && strcmp(custom, symbolTable[i].structName) == 0)
+            {
+                return;
+            }
+        }
+
+        printf("%s\n", custom);
+        printf("[EROARE linia %d]: Variabila %s nedeclarata / folosita incorect\n", yylineno, p_name2);
+        exit(-1);
+    }
+
+}
+
 void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val)
 {
+    if (isDeclared(p_identifier))
+    {
+        printf("[EROARE linia %d]: Variabila %s declarata deja\n", yylineno, p_identifier);
+        exit(-1);
+    }
+
     symbolTable[symCount].name = strdup(p_identifier);
     symbolTable[symCount].symType = strdup(p_symType);
     symbolTable[symCount].isConstant = isConstant;
@@ -129,19 +214,82 @@ void pushToSymTable(const char* p_symType, const char* p_identifier, void* p_val
     {
         symbolTable[symCount].value.undefined = false;
         if (strcmp(p_symType,"variabila") == 0)
+        {
+            if (!isCorrectType(p_val, currType))
+            {
+                printf("[EROARE linia %d]: Valoarea variabilei %s nu respecta tipul %s\n",
+                 yylineno, p_identifier, currType);
+                exit(-1);
+            }
+
             symbolTable[symCount].value.val = strdup((char*)p_val);
-        else if (strcmp(p_symType, "array") == 0 || strcmp(p_symType, "custom") == 0)
+        }
+        else
         {
             symbolTable[symCount].value.list = (struct List*) malloc(sizeof(struct List));
             memcpy(symbolTable[symCount].value.list, p_val, sizeof(struct List));
+
+            if (strcmp(p_symType, "array") == 0)
+            {
+                struct ListNode* l = symbolTable[symCount].value.list->begin;
+                while (l != NULL)
+                {
+                    if (!isCorrectType(l -> val, currType))
+                    {
+                        printf("[EROARE linia %d]: Valorile din vectorul %s nu respecta tipul %s\n",
+                        yylineno, p_identifier, currType);
+                        exit(-1);
+                    }
+                    if (l == symbolTable[symCount].value.list->end)
+                        break;
+                    l = l -> next;
+                }
+            }
+            else //custom
+            {
+                int i;
+                for (i = 0; i < symCount; i++)
+                {
+                    if (strcmp(symbolTable[i].structName, currType) == 0)
+                        break;
+                }
+
+                if (i == symCount)
+                {
+                    printf("[EROARE linia %d]: Nu exista structura %s\n",
+                    yylineno, currType);
+                    exit(-1);
+                }
+
+                struct ListNode* l = symbolTable[symCount].value.list->begin;
+                while (l != NULL && i < symCount)
+                {
+                    if (strcmp(symbolTable[i].structName, currType) != 0)
+                    {
+                        printf("[EROARE linia %d]: Prea multe elemente in initializarea variabilei custom %s\n",
+                         yylineno, p_identifier);
+                        exit(-1);
+                    }
+
+                    if (!isCorrectType(l -> val, symbolTable[i].value.valType))
+                    {
+                        printf("[EROARE linia %d]: Initializarea variabilei custom %s nu respecta tipurile de date corespunzatoare\n", 
+                        yylineno, p_identifier);
+                        exit(-1);
+                    }
+
+                    if (l == symbolTable[symCount].value.list->end)
+                        break;
+                    l = l -> next;
+                    i++;
+                }
+            }
         }
     }
     else 
     {
         symbolTable[symCount].value.undefined = true;
     }
-
-
 
     symCount++;
 }
@@ -239,4 +387,3 @@ void printFuncTable(const char* fileName)
     }
 
 }
-
