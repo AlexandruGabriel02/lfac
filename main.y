@@ -35,8 +35,10 @@ int yylex(void);
 %left '+' '-'
 %left '*' '/' '%'
 
-%type<strval> var_value rvalue lvalue function_call expression return_instr
+%type<strval> return_instr
 %type<list> initializer_list call_list
+%type<expr_info> var_value rvalue lvalue function_call 
+%type<tree> expression
 
 %%
 program: struct_section global_section function_section main_section {printf("Program compilat cu succes!\n");}
@@ -56,9 +58,9 @@ decl_line: DECL_VAR DECL_TYPE {setVarType($2);} var_list {resetGlobal();}
           | DECL_ARRAY DECL_CONSTANT DECL_TYPE {setVarType($3); setConstant();} array_list {resetGlobal();}
           ;
 var_list: IDENTIFIER {pushToSymTable("variabila", $1, NULL);}
-        | IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $1, $3);}
+        | IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $1, $3.value);}
         | var_list ',' IDENTIFIER {pushToSymTable("variabila", $3, NULL);}
-        | var_list ',' IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $3, $5);}
+        | var_list ',' IDENTIFIER ASSIGN var_value {pushToSymTable("variabila", $3, $5.value);}
         ;
 custom_list: IDENTIFIER {pushToSymTable("custom", $1, NULL);}
            | IDENTIFIER '(' initializer_list ')' {pushToSymTable("custom", $1, &$3);}
@@ -70,10 +72,10 @@ array_list: IDENTIFIER {pushToSymTable("array", $1, NULL);}
           | array_list ',' IDENTIFIER {pushToSymTable("array", $3, NULL);}
           | array_list ',' IDENTIFIER ASSIGN '[' initializer_list ']' {pushToSymTable("array", $3, &$6);}
 
-var_value: INT_VAL {$$ = strdup($1);} | STRING_VAL {$$ = strdup($1);} 
-         | FLOAT_VAL {$$ = strdup($1);} | CHAR_VAL {$$ = strdup($1);} | BOOL_VAL {$$ = strdup($1);} ;
-initializer_list: initializer_list ',' var_value {addToList(&$$, $3);}
-                | var_value {initList(&$$); addToList(&$$, $1);}
+var_value: INT_VAL {setExprInfo(&$$, "int", atoi($1), $1, true);} | STRING_VAL {setExprInfo(&$$, "string", 0, $1, false);} 
+         | FLOAT_VAL {setExprInfo(&$$, "float", 0, $1, false);} | CHAR_VAL {setExprInfo(&$$, "char", 0, $1, false);} | BOOL_VAL {setExprInfo(&$$, "bool", 0, $1, false);} ;
+initializer_list: initializer_list ',' var_value {addToList(&$$, $3.value);}
+                | var_value {initList(&$$); addToList(&$$, $1.value);}
                 ;
 
 
@@ -119,13 +121,13 @@ parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3); setVarType($2
         //  | DECL_CUSTOM NAME IDENTIFIER
         //  | DECL_CUSTOM DECL_CONSTANT NAME IDENTIFIER
         ;
-return_instr: FUNC_RETURN expression ';' {$$ = strdup($2);}
+return_instr: FUNC_RETURN expression ';' {$$ = strdup($2->info.type);}
 
-function_call: NAME '(' ')' {checkFuncName($1); checkFuncParams($1, NULL); $$ = getTypeFromFuncName($1);}
-             | NAME '(' {checkFuncName($1);} call_list ')' {checkFuncParams($1, &$4); $$ = getTypeFromFuncName($1);}
+function_call: NAME '(' ')' {checkFuncName($1); checkFuncParams($1, NULL); setExprInfo(&$$, getTypeFromFuncName($1), 0, NULL, false);}
+             | NAME '(' {checkFuncName($1);} call_list ')' {checkFuncParams($1, &$4); setExprInfo(&$$, getTypeFromFuncName($1), 0, NULL, false);}
              ;
-call_list: call_list ',' expression {addToList(&$$, $3);}
-         | expression {initList(&$$); addToList(&$$, $1);}
+call_list: call_list ',' expression {addToList(&$$, $3->info.type);}
+         | expression {initList(&$$); addToList(&$$, $1->info.type);}
          ;
 
 
@@ -137,7 +139,7 @@ code_block: code_block code_statement
           | /* epsilon */
           ;
 
-code_statement: lvalue {checkIfConstAssign();} ASSIGN expression ';' {checkMatchingType($1, $4);}
+code_statement: lvalue {checkIfConstAssign();} ASSIGN expression ';' {checkMatchingType($1.type, $4->info.type);}
               | while_statement
               | repeat_statement
               | for_statement
@@ -145,31 +147,32 @@ code_statement: lvalue {checkIfConstAssign();} ASSIGN expression ';' {checkMatch
               | decl_line ';'
               | function_call ';'
               | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call ';'
-              | TYPE_OF '(' expression ')' ';' {printf("Tipul expresiei de la linia %d: %s\n", yylineno, $3);}
+              | TYPE_OF '(' expression ')' ';' {printf("Tipul expresiei de la linia %d: %s\n", yylineno, $3->info.type);}
+              | EVAL '(' expression ')' ';' { printEvalResult($3); }
               ; 
 
 
 /* Diverse */
-lvalue: IDENTIFIER {checkIfDeclaredVar("variabila", $1, NULL, NULL); $$ = getTypeFromVarName($1);}
-      | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclaredVar("array", $1, NULL, NULL); $$ = getTypeFromVarName($1);}
-      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclaredVar("custom", $1, "variabila", $3); $$ = getTypeFromVarName($3);}
-      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclaredVar("custom", $1, "array", $3); $$ = getTypeFromVarName($3);}
+lvalue: IDENTIFIER {checkIfDeclaredVar("variabila", $1, NULL, NULL); setInfoFromVarName(&$$, $1, -1);}
+      | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclaredVar("array", $1, NULL, NULL); setInfoFromVarName(&$$, $1, atoi($3));}
+      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclaredVar("custom", $1, "variabila", $3); setInfoFromVarName(&$$, $1, -1);}
+      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclaredVar("custom", $1, "array", $3); setInfoFromVarName(&$$, $1, atoi($5));}
       ;
-rvalue:   function_call {$$ = strdup($1);}
-        | var_value {$$ = getTypeFromVal($1);}
-        | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call {$$ = strdup($4);}
-        | lvalue {$$ = strdup($1); resetConstant();}
+rvalue:   function_call {$$ = $1;}
+        | var_value {$$ = $1;}
+        | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call {$$ = $4;}
+        | lvalue {$$ = $1; resetConstant();}
         ;
 
-expression: rvalue {$$ = strdup($1);}
-          | expression '+' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
-          | expression '-' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
-          | expression '*' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
-          | expression '/' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
-          | expression '%' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
-          | '(' expression ')' {$$ = strdup($2);}
+expression: rvalue {$$ = buildAST(&$1, NULL, NULL, OPERAND_NODE);}
+          | expression '+' expression {checkMatchingType($1->info.type, $3->info.type); $$ = buildAST("+", $1, $3, OPERATOR_NODE);} 
+          | expression '-' expression {checkMatchingType($1->info.type, $3->info.type); $$ = buildAST("-", $1, $3, OPERATOR_NODE);} 
+          | expression '*' expression {checkMatchingType($1->info.type, $3->info.type); $$ = buildAST("*", $1, $3, OPERATOR_NODE);} 
+          | expression '/' expression {checkMatchingType($1->info.type, $3->info.type); $$ = buildAST("/", $1, $3, OPERATOR_NODE);} 
+          | expression '%' expression {checkMatchingType($1->info.type, $3->info.type); $$ = buildAST("\%", $1, $3, OPERATOR_NODE);} 
+          | '(' expression ')' {$$ = $2;}
           ;
-bool_expression: expression COMPARATION_OP expression { checkMatchingType($1, $3); }
+bool_expression: expression COMPARATION_OP expression { checkMatchingType($1->info.type, $3->info.type); }
                 | expression
                 ;
 

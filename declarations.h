@@ -12,10 +12,17 @@ struct List
     struct ListNode* end;
 };
 
+enum nodeType
+{
+    OPERAND_NODE,
+    OPERATOR_NODE
+};
+
 struct ExprInfo
 {
     char* type;
-    int value;
+    char* value;
+    int intVal;
     bool isEvaluable;
 };
 

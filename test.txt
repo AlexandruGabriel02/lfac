@@ -5,8 +5,10 @@ vars:
     var int $x;
     var string $y;
 methods:
-    function functieVoid (){
+    function functieVoid (){    
+        array int $int_arr <- [0, 1, 2, 3, 4, 5];
 
+        $int_arr[4] <- 0;
     }
 
     function functieBool(var const char $ch) : bool 
@@ -36,7 +38,7 @@ methods:
 }
 
 _GLOBAL_VARS_
-var int $t, $z <- 2;
+var int $t, $z <- -2;
 var string $str, $a <- "xA01", $b <- "ABC";
 array bool $bb <- [ true, true, false, false], $arr;
 var const float $fl <- 12., $c <- 12.12;
@@ -95,12 +97,22 @@ function intFunc2 (var const int $param, var string $p_str) : int
 
 _BEGIN_PROGR_
 
-array bool $boolarr <- [true];
+array bool $boolarr <- [true, false, false];
 
 $boolarr[2] <- $obj->functieBool('l' + 'f' + 'a' + 'c');
 $obj->functieVoid();
+var int $v1 <- 99;
 
 TypeOf("un string obisnuit");
 TypeOf($bb[2] + $bb[1] + false);
 TypeOf( (intFunc2(1 + 2 / 2, "abc") + $z) * 3 / 2 );
 TypeOf($obj->functieVoid());
+
+Eval('l' + 'f' + 'a' + 'c');
+Eval((-2 + 3) * 5 + (13 / 4 % 2));
+Eval($v1 + $z);
+Eval(10 * $t);
+Eval(intFunc1(100));
+
+array int $lfac <- [5, 1, 3, 9, 121, 0];
+Eval($lfac[4]);

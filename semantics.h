@@ -149,6 +149,80 @@ void tempResetStructContext(const char* context)
     }
 }
 
+void setExprInfo(struct ExprInfo* e, const char* p_type, int p_intValue, char* p_value, bool p_isEvaluable)
+{
+    e->type = strdup(p_type);
+    e->intVal = p_intValue;
+
+    if (p_value != NULL)
+        e->value = strdup(p_value);
+    else 
+        e->value = NULL;
+
+    e->isEvaluable = p_isEvaluable;
+}
+
+void setInfoFromVarName(struct ExprInfo* e, const char* p_varName, int arrayPos)
+{
+    int i;
+    for (i = 0; i < symCount; i++)
+    {
+        if (!strcmp(p_varName, symbolTable[i].name))
+            break;
+    }
+
+    if (i == symCount) //teoretic nu poate ajunge pe cazul asta
+    {
+        printf("Unknown error\n");
+        return;
+    }
+
+    e->value = NULL;
+    e->intVal = 0;
+    e->type = strdup(symbolTable[i].value.valType);
+
+    if (!strcmp(e->type, "int"))
+        e->isEvaluable = true;
+    else 
+        e->isEvaluable = false;
+
+    if (arrayPos == -1) //variabila
+    {
+        if (symbolTable[i].value.val != NULL)
+        {
+            e->value = strdup(symbolTable[i].value.val);
+            e->intVal = atoi(e->value);
+        }
+    }
+    else //camp din array
+    {
+        struct ListNode* l = symbolTable[i].value.list->begin;
+
+        while (l != NULL)
+        {
+            if (arrayPos == 0)
+            {
+                e->value = strdup(l->val);
+
+                if (e->isEvaluable)
+                    e->intVal = atoi(e->value);
+                break;
+            }
+
+            if (l == symbolTable[i].value.list->end)
+            {
+                printf("[EROARE linia %d]: Array %s out of range\n",
+                yylineno, p_varName);
+                exit(-1);
+            }
+
+            arrayPos--;
+            l = l->next;
+        }
+    }
+    
+}
+
 void addToCustomsList()
 {
     addToList(&customs, structContext);
@@ -610,4 +684,72 @@ void printFuncTable(const char* fileName)
 
     }
 
+}
+
+/* Arbore abstract de sintaxa */
+
+struct AST* buildAST(void* info, struct AST* left, struct AST* right, enum nodeType node)
+{
+    struct AST* treeNode = (struct AST*) malloc(sizeof(struct AST));
+
+    if (node == OPERAND_NODE)
+    {
+        treeNode->info = * ( (struct ExprInfo*) info );
+    }
+    else if (node == OPERATOR_NODE)
+    {
+        treeNode->info.type = strdup(left->info.type);
+        treeNode->info.value = strdup( (char*) info );
+        treeNode->info.isEvaluable = true;
+    }
+
+    treeNode -> left = left;
+    treeNode -> right = right;
+
+    return treeNode;
+}
+
+int evalAST(struct AST* node)
+{
+    if (node->info.value != NULL && !strcmp(node->info.value, "+"))
+        return evalAST(node->left) + evalAST(node->right);
+
+    if (node->info.value != NULL && !strcmp(node->info.value, "-"))
+        return evalAST(node->left) - evalAST(node->right);
+
+    if (node->info.value != NULL && !strcmp(node->info.value, "*"))
+        return evalAST(node->left) * evalAST(node->right);
+
+    if (node->info.value != NULL && !strcmp(node->info.value, "/"))
+        return evalAST(node->left) / evalAST(node->right);
+
+    if (node->info.value != NULL && !strcmp(node->info.value, "%"))
+        return evalAST(node->left) % evalAST(node->right);
+    
+    return node->info.intVal;
+}
+
+bool canEvaluate(struct AST* node)
+{
+    if (node->info.value != NULL && strchr("+-*/%", node->info.value[0]) && strlen(node->info.value) == 1)
+        return canEvaluate(node->left) & canEvaluate(node->right);
+    return node->info.isEvaluable;
+}
+
+void printEvalResult(struct AST* node)
+{
+    printf("Rezultat evaluare expresie linia %d: ", yylineno);
+    if (strcmp(node->info.type, "int") != 0)
+    {
+        printf("expresia nu are tipul int, ci %s\n", node->info.type);
+        return;
+    }
+ 
+    printf("%d ", evalAST(node));
+    if (!canEvaluate(node))
+    {
+        printf("(warning: au fost inlocuiti cu valoarea 0 in expresie operatorii care nu pot fi calculati sau nu au valoare)");
+    }
+
+    printf("\n");
 }
