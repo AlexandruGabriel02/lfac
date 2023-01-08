@@ -13,6 +13,8 @@ int yylex(void);
 {
     char* strval;
     struct List list;
+    struct AST* tree;
+    struct ExprInfo expr_info;
 }
 
 %start program
@@ -33,11 +35,11 @@ int yylex(void);
 %left '+' '-'
 %left '*' '/' '%'
 
-%type<strval> var_value rvalue lvalue function_call expression
+%type<strval> var_value rvalue lvalue function_call expression return_instr
 %type<list> initializer_list call_list
 
 %%
-program: struct_section global_section function_section main_section {printf("Program corect sintactic!\n");}
+program: struct_section global_section function_section main_section {printf("Program compilat cu succes!\n");}
 
 
 /* Variabile globale */
@@ -48,8 +50,8 @@ var_declaration: var_declaration decl_line ';'
                 ;
 decl_line: DECL_VAR DECL_TYPE {setVarType($2);} var_list {resetGlobal();}
           | DECL_VAR DECL_CONSTANT DECL_TYPE {setVarType($3); setConstant();} var_list {resetGlobal();}
-          | DECL_CUSTOM NAME {setVarType($2);} custom_list {resetGlobal();}
-          | DECL_CUSTOM DECL_CONSTANT NAME {setVarType($3); setConstant();} custom_list {resetGlobal();}
+          | DECL_CUSTOM NAME {checkStructName($2); setVarType($2);} custom_list {resetGlobal();}
+          | DECL_CUSTOM DECL_CONSTANT NAME {checkStructName($3); setVarType($3); setConstant();} custom_list {resetGlobal();}
           | DECL_ARRAY DECL_TYPE {setVarType($2);} array_list {resetGlobal();}
           | DECL_ARRAY DECL_CONSTANT DECL_TYPE {setVarType($3); setConstant();} array_list {resetGlobal();}
           ;
@@ -81,7 +83,7 @@ struct_section: LABEL_STRUCT struct_declaration {resetStructContext();};
 struct_declaration: struct_declaration singular_struct
                   | /* epsilon */
                   ;
-singular_struct: DECL_CUSTOM NAME {setStructContext($2);} '{' struct_code '}'
+singular_struct: DECL_CUSTOM NAME {setStructContext($2);} '{' struct_code '}' {addToCustomsList();}
                 ;
 struct_code: STRUCT_VARS ':' str_vars_section STRUCT_METHODS ':' str_methods_section
            | /* epsilon */
@@ -99,25 +101,25 @@ func_declaration: func_declaration singular_function
                 | /* epsilon */ 
                 ;
 singular_function: DECL_FUNCTION NAME '(' list_param ')' ':' DECL_TYPE {pushToFuncTable($2, $7);}
-                '{' code_block return_instr '}' 
+                '{' code_block return_instr {checkMatchingType($7, $11);} '}' {tempResetStructContext(NULL);}
                 | DECL_FUNCTION NAME '(' ')' ':' DECL_TYPE {pushToFuncTable($2, $6);}
-                '{' code_block return_instr '}'
+                '{' code_block return_instr {checkMatchingType($6, $10);} '}' {tempResetStructContext(NULL);}
                 | DECL_FUNCTION NAME '(' list_param ')' {pushToFuncTable($2, "void");}
-                '{' code_block '}'
+                '{' code_block '}' {tempResetStructContext(NULL);}
                 | DECL_FUNCTION NAME '(' ')' {pushToFuncTable($2, "void");}
-                '{' code_block '}'
+                '{' code_block '}' {tempResetStructContext(NULL);}
                 ;
 list_param: list_param ',' parameter
-          | {initParams();} parameter
+          | {initParams(); tempResetStructContext("none");} parameter
           ; 
-parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3);}
-         | DECL_VAR DECL_CONSTANT DECL_TYPE IDENTIFIER {addParam($3, true, $4);}
+parameter: DECL_VAR DECL_TYPE IDENTIFIER {addParam($2, false, $3); setVarType($2); pushToSymTable("variabila", $3, NULL); resetGlobal();}
+         | DECL_VAR DECL_CONSTANT DECL_TYPE IDENTIFIER {addParam($3, true, $4); setVarType($3); setConstant(); pushToSymTable("variabila", $4, NULL); resetGlobal();}
         //  | DECL_ARRAY DECL_TYPE IDENTIFIER
         //  | DECL_ARRAY DECL_CONSTANT DECL_TYPE IDENTIFIER
         //  | DECL_CUSTOM NAME IDENTIFIER
         //  | DECL_CUSTOM DECL_CONSTANT NAME IDENTIFIER
         ;
-return_instr: FUNC_RETURN expression ';'
+return_instr: FUNC_RETURN expression ';' {$$ = strdup($2);}
 
 function_call: NAME '(' ')' {checkFuncName($1); checkFuncParams($1, NULL); $$ = getTypeFromFuncName($1);}
              | NAME '(' {checkFuncName($1);} call_list ')' {checkFuncParams($1, &$4); $$ = getTypeFromFuncName($1);}
@@ -156,7 +158,7 @@ lvalue: IDENTIFIER {checkIfDeclaredVar("variabila", $1, NULL, NULL); $$ = getTyp
 rvalue:   function_call {$$ = strdup($1);}
         | var_value {$$ = getTypeFromVal($1);}
         | IDENTIFIER POINT_TO {checkIfDeclaredVar("custom", $1, NULL, NULL);} function_call {$$ = strdup($4);}
-        | lvalue {$$ = strdup($1);}
+        | lvalue {$$ = strdup($1); resetConstant();}
         ;
 
 expression: rvalue {$$ = strdup($1);}
@@ -167,7 +169,7 @@ expression: rvalue {$$ = strdup($1);}
           | expression '%' expression {checkMatchingType($1, $3); $$ = strdup($1);} 
           | '(' expression ')' {$$ = strdup($2);}
           ;
-bool_expression: expression COMPARATION_OP expression
+bool_expression: expression COMPARATION_OP expression { checkMatchingType($1, $3); }
                 | expression
                 ;
 

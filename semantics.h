@@ -80,16 +80,20 @@ struct Functions
 /* --- */
 
 /* Variabile globale */
+char* cpy_StructContext;
 char* structContext;
 char* currType;
 bool isConstant = false;
-int symCount = 0;
-int funcCount;
 extern int yylineno;
 
 /* Tabele de simboluri */
+int symCount = 0;
 struct Symbols symbolTable[N];
+
+int funcCount = 0;
 struct Functions funcTable[N];
+
+struct List customs = {NULL, NULL};
 
 void setVarType(const char* str)
 {
@@ -117,12 +121,60 @@ void setStructContext(const char* p_structName)
 {
     free(structContext);
     structContext = strdup(p_structName);
+
+    free(cpy_StructContext);
+    cpy_StructContext = strdup(structContext);
 }
 
 void resetStructContext()
 {
     free(structContext);
     structContext = strdup("none");
+
+    free(cpy_StructContext);
+    cpy_StructContext = strdup(structContext);
+}
+
+void tempResetStructContext(const char* context)
+{
+    if (context == NULL)
+    {
+        free(structContext);
+        structContext = strdup(cpy_StructContext);
+    }
+    else 
+    {
+        free(structContext);
+        structContext = strdup("none");
+    }
+}
+
+void addToCustomsList()
+{
+    addToList(&customs, structContext);
+}
+
+void checkStructName(const char* p_structName)
+{
+    struct ListNode* l = customs.begin;
+    bool found = false;
+
+    while (l != NULL)
+    {
+        if (!strcmp(l -> val, p_structName))
+            found = true;
+        
+        if (l == customs.end)
+            break;
+        l = l -> next;
+    }
+
+    if (!found)
+    {
+        printf("[EROARE linia %d]: Nu exista structura cu numele %s\n",
+         yylineno, p_structName);
+        exit(-1);
+    }
 }
 
 void checkIfConstAssign()
@@ -482,9 +534,13 @@ void pushToFuncTable(const char* p_funcName, const char* p_returnType)
         exit(-1);
     }
 
+    tempResetStructContext(NULL);
+
     funcTable[funcCount].name = strdup(p_funcName);
     funcTable[funcCount].returnType = strdup(p_returnType);
     funcTable[funcCount].structName = strdup(structContext);
+
+    tempResetStructContext("none");
 
     funcCount++;
 }

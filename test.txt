@@ -9,9 +9,23 @@ methods:
 
     }
 
-    function functieBool(var const char $c) : bool 
+    function functieBool(var const char $ch) : bool 
     {
-        return 0;
+        var char $ch2;
+        var bool $retValue;
+
+        if $ch2 == $ch 
+        {
+            $retValue <- true;
+        }
+        else 
+        {
+            $retValue <- false;
+        }
+
+        $ch2 <- 'd' + $ch;
+
+        return $retValue;
     }
 }
 
@@ -35,15 +49,15 @@ function floatFunc() : float
 {
     for $a in $b
     {
-        if $b < 10
+        if $t < 10
         {
             $z <- $z + 1;
         }
-        elif $b > 10
+        elif $t > 10
         {
 
         }
-        elif $b != 0
+        elif $t != 0
         {
             
         }
@@ -67,12 +81,14 @@ function intFunc1(var int $ds) : int
     return 20;
 }
 
-function intFunc2 (var const int $x, var string $str) : int
+function intFunc2 (var const int $param, var string $p_str) : int
 { 
     var char $character;
+    $p_str <- "string" + "parametru";
+
     while $a<$b
     {
-      $z <- 2;  
+      $z <- $z + 1;  
     } 
     return 10;
 }
