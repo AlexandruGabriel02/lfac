@@ -186,7 +186,7 @@ while_statement: WHILE list_expression '{' code_block '}'
 repeat_statement : REPEAT '{' code_block '}' UNTIL list_expression ';'
                  ;
 
-for_statement: FOR IDENTIFIER IN lvalue  '{' code_block '}'
+for_statement: FOR lvalue IN lvalue  {checkMatchingType($2.type, $4.type);} '{' code_block '}'
              ;
 
 if_statement: IF list_expression '{' code_block '}' elseif_statement else_statement
