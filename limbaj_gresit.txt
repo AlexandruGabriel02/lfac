@@ -1,0 +1,45 @@
+_STRUCTURES_
+
+_GLOBAL_VARS_
+var int $x <- 23;
+var int $x1;
+var int $x1;
+var int $x2;
+var float $f1 <- 50.0;
+var string $s <- "ana";
+
+_FUNCTIONS_
+function testFunction(var int $x, var float $z) : int {
+
+    return 10;
+}
+
+function testFunction(var int $x, var float $z) : int {
+
+    return 10.5;
+}
+
+function testFunction(var float $x, var float $z) : int {
+
+    return $x + 2 * 3;
+}
+
+function test(var int $param) : int {
+    var int $no_return_error;
+    $param <- $no_return_error;
+}
+
+_BEGIN_PROGR_
+
+$x3 <- $x + 2;
+$f1 <- $x + $x2;
+$f1 <- test (5) + $x;
+$x <- test(5) + $f1; 
+$x <- $s + $f1;
+test($f1);
+test(5,$f1);
+TypeOf($f1+$x);
+Eval($f1);
+Eval($f1+$x);
+test(5+$f1);
+
