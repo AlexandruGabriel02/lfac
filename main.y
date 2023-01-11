@@ -155,8 +155,8 @@ code_statement: lvalue {checkIfConstAssign();} ASSIGN expression ';' {checkMatch
 /* Diverse */
 lvalue: IDENTIFIER {checkIfDeclaredVar("variabila", $1, NULL, NULL); setInfoFromVarName(&$$, $1, -1);}
       | IDENTIFIER '[' INT_VAL ']'  {checkIfDeclaredVar("array", $1, NULL, NULL); setInfoFromVarName(&$$, $1, atoi($3));}
-      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclaredVar("custom", $1, "variabila", $3); setInfoFromVarName(&$$, $1, -1);}
-      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclaredVar("custom", $1, "array", $3); setInfoFromVarName(&$$, $1, atoi($5));}
+      | IDENTIFIER POINT_TO IDENTIFIER {checkIfDeclaredVar("custom", $1, "variabila", $3); setInfoFromVarName(&$$, $3, -1);}
+      | IDENTIFIER POINT_TO IDENTIFIER '[' INT_VAL ']' {checkIfDeclaredVar("custom", $1, "array", $3); setInfoFromVarName(&$$, $3, atoi($5));}
       ;
 rvalue:   function_call {$$ = $1;}
         | var_value {$$ = $1;}
